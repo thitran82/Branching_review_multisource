@@ -552,7 +552,7 @@ export default function App() {
               <div className="sourcebox">
                 <input className="field" type="password" value={scopusKey} onChange={(e) => setScopusKey(e.target.value)} placeholder="Scopus API key" autoComplete="off" />
                 <input className="field" type="password" value={scopusInstToken} onChange={(e) => setScopusInstToken(e.target.value)} placeholder="Optional InstToken" autoComplete="off" />
-                <input className="field" value={scopusDepthQuery} onChange={(e) => setScopusDepthQuery(e.target.value)} placeholder="Optional Scopus depth query; blank = REFDOI(seed DOI)" />
+                <input className="field" value={scopusDepthQuery} onChange={(e) => setScopusDepthQuery(e.target.value)} placeholder="Optional Scopus depth query; blank = REF(seed DOI)" />
                 <input className="field" value={scopusBreadthQuery} onChange={(e) => setScopusBreadthQuery(e.target.value)} placeholder="Optional Scopus breadth query; blank = TITLE-ABS-KEY terms" />
               </div>
             )}
