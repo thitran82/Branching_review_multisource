@@ -230,13 +230,23 @@ async function resolveOpenAlexSeed(seedId) {
 }
 
 function scopusTerms(keywords) {
-  const terms = String(keywords || "")
+  const text = String(keywords || "").trim();
+  if (!text) return "";
+
+  // Preserve an explicit Boolean/phrase query entered by the user. For a
+  // simple space-separated phrase, require every term with AND.
+  if (/\b(?:AND|OR|NOT)\b/i.test(text) || /["{}()]/.test(text)) {
+    return text;
+  }
+  return text
     .split(/\s+/)
-    .map((s) => s.trim())
+    .map((term) => term.trim())
     .filter(Boolean)
-    .map((s) => s.replace(/[()]/g, ""));
-  if (!terms.length) return "";
-  return terms.join(" AND ");
+    .join(" AND ");
+}
+
+function scopusQuoted(value) {
+  return `"${String(value || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function scopusIssnClause(issns) {
@@ -260,7 +270,7 @@ async function fetchScopus(query, { apiKey, instToken, cap = 500 } = {}) {
   if (!apiKey) throw new Error("Scopus selected but no Scopus API key was provided.");
   const out = [];
   let start = 0;
-  const count = 25; // COMPLETE view max is 25
+  const count = 25; // conservative page size across entitlement levels
   while (out.length < cap) {
     const p = new URLSearchParams();
     p.set("query", query);
@@ -275,7 +285,12 @@ async function fetchScopus(query, { apiKey, instToken, cap = 500 } = {}) {
     const text = await r.text();
     let data;
     try { data = JSON.parse(text); } catch { data = null; }
-    if (!r.ok) throw new Error(`Scopus ${r.status}: ${(data && data["service-error"] && data["service-error"].status && data["service-error"].status.statusText) || text.slice(0, 200)}`);
+    if (!r.ok) {
+      const message =
+        (data && data["service-error"] && data["service-error"].status && data["service-error"].status.statusText) ||
+        text.slice(0, 200);
+      throw new Error(`Scopus ${r.status}: ${message} | Query: ${query}`);
+    }
     const entries = data && data["search-results"] && data["search-results"].entry ? data["search-results"].entry : [];
     out.push(...entries.map(shapeScopus));
     if (entries.length < count) break;
@@ -507,7 +522,11 @@ export default async function handler(req, res) {
     if (sources.scopus) {
       const jClause = scopusIssnClause(issns || []);
       const yClause = scopusYearClause(yearFrom, yearTo);
-      const defaultDepth = seedDoi ? joinQuery([`REFDOI(${cleanDoi(seedDoi)})`, jClause, yClause]) : "";
+      // Scopus supports REF(...) for searching cited references. REFDOI is
+      // not a valid Scopus search field and causes "Error translating query".
+      const defaultDepth = seedDoi
+        ? joinQuery([`REF(${scopusQuoted(cleanDoi(seedDoi))})`, jClause, yClause])
+        : "";
       const defaultBreadth = joinQuery([`TITLE-ABS-KEY(${scopusTerms(keywords)})`, jClause, yClause]);
       const depthQuery = (scopus.depthQuery || defaultDepth || "").trim();
       const breadthQuery = (scopus.breadthQuery || defaultBreadth || "").trim();
