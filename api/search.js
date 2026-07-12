@@ -266,7 +266,6 @@ async function fetchScopus(query, { apiKey, instToken, cap = 500 } = {}) {
     p.set("query", query);
     p.set("start", String(start));
     p.set("count", String(count));
-    p.set("view", "COMPLETE");
     const headers = {
       Accept: "application/json",
       "X-ELS-APIKey": apiKey,
