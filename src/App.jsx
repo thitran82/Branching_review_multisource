@@ -124,7 +124,7 @@ export default function App() {
       return;
     }
     if (runDepth && !seed) {
-      setError("Resolve a seed paper first, or turn off the depth branch.");
+      setError("Find a seed paper first, or turn off the depth branch.");
       return;
     }
     if (runBreadth && !keywords.trim()) {
@@ -455,7 +455,7 @@ export default function App() {
                 placeholder="10.25300/MISQ/2013/37.2.05"
               />
               <button className="btn ghost" onClick={resolveSeed}>
-                Resolve
+                Find paper
               </button>
             </div>
             {seedStatus.state === "loading" && (
